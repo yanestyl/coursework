@@ -1,12 +1,10 @@
 #include <Windows.h>
 #include <string>
 #include <Winuser.h>
-#include <clocale>
 #include "resource.h"
 #include "SoftwareDefinitions.h"
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdshow) {
-
 	WNDCLASS SoftwareMainClass = NewWindowClass((HBRUSH)COLOR_WINDOW, LoadCursor(NULL, IDC_ARROW), hInst, LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON1)),
 	L"MainWndClass", SoftwareMainProcedure);
 	
@@ -39,6 +37,11 @@ WNDCLASS NewWindowClass(HBRUSH BGColor, HCURSOR Cursor, HINSTANCE hInst, HICON I
 // - - - - - - - - - - О Б Р А Б О Т Ч И К - С О Б Ы Т И Й - - - - - - - - - - //
 LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 	switch (msg) {
+	case WM_CREATE:
+		MainWndAddMenues(hWnd);
+		MainWndAddWidgets(hWnd);
+		MainWndStart(hWnd);
+		break;
 	case WM_COMMAND:
 		switch (wp) {
 		case OnReloadSoftware:
@@ -55,11 +58,6 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 			break;
 		default: break;
 		}
-		break;
-	case WM_CREATE:
-		MainWndAddMenues(hWnd);
-		MainWndStart(hWnd);
-		MainWndAddWidgets(hWnd);
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
@@ -93,11 +91,7 @@ void MainWndAddMenues(HWND hWnd) {
 
 // - - - - - - - - - - В И Д Ж Е Т Ы - - - - - - - - - - //
 void MainWndAddWidgets(HWND hWnd) {
-
 	hListBox = CreateWindowA("LISTBOX", NULL, WS_CHILD | WS_VSCROLL | WS_BORDER | WS_VISIBLE | LBS_SORT | LB_ADDSTRING, 30, 30, 820, 350, hWnd, NULL, NULL, NULL);
-	
-	SendMessage(hListBox, LB_ADDSTRING, 0,
-		(LPARAM)(LPSTR)"ENGLISH");
 
 	CreateWindowA("button", "Save", WS_VISIBLE | WS_CHILD | ES_CENTER, 100, 400, 150, 30, hWnd, (HMENU)OnSaveFile, NULL, NULL);
 	CreateWindowA("button", "Delete", WS_VISIBLE | WS_CHILD | ES_CENTER, 300, 400, 150, 30, hWnd, (HMENU)DeleteApp, NULL, NULL);
@@ -140,7 +134,9 @@ void DeleteApp() {
 
 // - - - - - - - - - - С Ч И Т Ы В А Н И Е - Р Е Е С Т Р А - - - - - - - - - - //
 void MainWndStart(HWND hWnd) {
-	/*setlocale(LC_CTYPE, "utf8");
+
+	SendMessage(hListBox, LB_RESETCONTENT, 0, 0);
+
 	DWORD dwIndex = 0;
 	LONG ret;
 	DWORD cbName = 256;
@@ -149,38 +145,27 @@ void MainWndStart(HWND hWnd) {
 	DWORD dwSize;
 	DWORD dwType;
 	HKEY hKey;
+
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", 0, KEY_READ, &hKey) != ERROR_SUCCESS)
 		return;
-	else MessageBox(0, 0, 0, 0);
 	// Поочередно проходим по каждому вложенному разделу
 	while ((ret = RegEnumKeyEx(hKey, dwIndex, szSubKeyName, &cbName, NULL, NULL, NULL, NULL)) != ERROR_NO_MORE_ITEMS)
 	{
-		if (ret != ERROR_SUCCESS)
-			continue;
-		// открываем вложенный раздел и ищем в нем ключ DisplayName
-		HKEY hItem;
-		if (RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ, &hItem) != ERROR_SUCCESS)
-			continue;
-		else SendMessage(hListBox, LB_ADDSTRING, 0,
-			(LPARAM)(LPSTR)"55555555555555555555");
-		// отображаем на экране название установленной программы
-		dwSize = sizeof(szDisplayName);
-		if (RegQueryValueEx(hItem, L"DisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS)
-		{
-			SendMessage(hListBox, LB_ADDSTRING, 0,
-				(LPARAM)(LPSTR)"111");
-		}
-	
-		//MessageBox(hWnd, (LPCWSTR)'GOOD', NULL, NULL);
-			//SendMessageA(hListBox, (UINT)szDisplayName, LB_ADDSTRING, NULL);
-			//SendMessage(hListBox, (UINT)szDisplayName, NULL, NULL);
-			//AddItem(hListBox, szDisplayName, hbmpitem);
-			//LB_ADDSTRING(&hListBox, szDisplayName);
-		RegCloseKey(hItem);
-		dwIndex++;
-		cbName = 256;
+			// открываем вложенный раздел и ищем в нем ключ DisplayName
+			HKEY hItem;
+			if (RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ, &hItem) != ERROR_SUCCESS)
+				continue;
+			// отображаем на экране название установленной программы
+			dwSize = sizeof(szDisplayName);
+			if (RegQueryValueEx(hItem, L"DisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS)
+				SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
+			RegCloseKey(hItem);
+			dwIndex++;
+			cbName = 256;
 	}
-	RegCloseKey(hKey);*/
+	RegCloseKey(hKey);
 }
+
+
 
 
