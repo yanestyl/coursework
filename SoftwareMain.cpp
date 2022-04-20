@@ -93,9 +93,10 @@ void MainWndAddMenues(HWND hWnd) {
 void MainWndAddWidgets(HWND hWnd) {
 	hListBox = CreateWindowA("LISTBOX", NULL, WS_CHILD | WS_VSCROLL | WS_BORDER | WS_VISIBLE | LBS_SORT | LB_ADDSTRING, 30, 30, 820, 350, hWnd, NULL, NULL, NULL);
 
-	CreateWindowA("button", "Save", WS_VISIBLE | WS_CHILD | ES_CENTER, 100, 400, 150, 30, hWnd, (HMENU)OnSaveFile, NULL, NULL);
-	CreateWindowA("button", "Delete", WS_VISIBLE | WS_CHILD | ES_CENTER, 300, 400, 150, 30, hWnd, (HMENU)DeleteApp, NULL, NULL);
-	CreateWindowA("button", "Exit", WS_VISIBLE | WS_CHILD | ES_CENTER, 500, 400, 150, 30, hWnd, (HMENU)OnExitSoftware, NULL, NULL);
+	CreateWindowA("button", "Save", WS_VISIBLE | WS_CHILD | ES_CENTER, 30, 425, 150, 30, hWnd, (HMENU)OnSaveFile, NULL, NULL);
+	CreateWindowA("button", "Delete", WS_VISIBLE | WS_CHILD | ES_CENTER, 250, 425, 150, 30, hWnd, (HMENU)DeleteApp, NULL, NULL);
+	CreateWindowA("button", "new", WS_VISIBLE | WS_CHILD | ES_CENTER, 470, 425, 150, 30, hWnd, NULL, NULL, NULL);
+	CreateWindowA("button", "Exit", WS_VISIBLE | WS_CHILD | ES_CENTER, 700, 425, 150, 30, hWnd, (HMENU)OnExitSoftware, NULL, NULL);
 
 }
 
@@ -146,14 +147,14 @@ void MainWndStart(HWND hWnd) {
 	DWORD dwType;
 	HKEY hKey;
 
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", 0, KEY_READ, &hKey) != ERROR_SUCCESS)
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", 0, KEY_READ | KEY_WOW64_64KEY, &hKey) != ERROR_SUCCESS)
 		return;
 	// Поочередно проходим по каждому вложенному разделу
 	while ((ret = RegEnumKeyEx(hKey, dwIndex, szSubKeyName, &cbName, NULL, NULL, NULL, NULL)) != ERROR_NO_MORE_ITEMS)
 	{
 			// открываем вложенный раздел и ищем в нем ключ DisplayName
 			HKEY hItem;
-			if (RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ, &hItem) != ERROR_SUCCESS)
+			if (RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ | KEY_WOW64_64KEY, &hItem) != ERROR_SUCCESS)
 				continue;
 			// отображаем на экране название установленной программы
 			dwSize = sizeof(szDisplayName);
