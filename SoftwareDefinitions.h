@@ -23,6 +23,10 @@ WNDCLASS NewWindowClass(HBRUSH BGColor, HCURSOR Cursor, HINSTANCE hInst, HICON I
 
 void MainWndAddMenues(HWND hWnd);
 void MainWndAddWidgets(HWND hWnd);
+void MainWndStart0(HWND hWnd);
 void MainWndStart(HWND hWnd);
+void MainWndStart1(HWND hWnd);
+void MainWndStart2(HWND hWnd);
+void MainWndStart3(HWND hWnd);
 void SaveDate(LPCSTR path);
 void DeleteApp();
