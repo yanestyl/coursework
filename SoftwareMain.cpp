@@ -40,12 +40,12 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 	case WM_CREATE:
 		MainWndAddMenues(hWnd);
 		MainWndAddWidgets(hWnd);
-		MainWndStart(hWnd);
+		MainWndStart0(hWnd);
 		break;
 	case WM_COMMAND:
 		switch (wp) {
 		case OnReloadSoftware:
-			MainWndStart(hWnd);
+			MainWndStart0(hWnd);
 			break;
 		case OnSaveFile:
 			SaveDate("C:\\Users\\yaros\\source\\repos\\Project1\\output.txt");
@@ -139,6 +139,61 @@ void MainWndStart(HWND hWnd) {
 	SendMessage(hListBox, LB_RESETCONTENT, 0, 0);
 
 	DWORD dwIndex = 0;
+
+	LONG ret;
+	DWORD cbName = 256;
+	TCHAR szSubKeyName[256];
+	char szDisplayName[256];
+	DWORD dwSize;
+	DWORD dwType;
+	HKEY hKey;
+	
+	
+			if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall", 0, KEY_READ | KEY_WOW64_64KEY, &hKey) != ERROR_SUCCESS)
+				return;
+			// Поочередно проходим по каждому вложенному разделу
+			while ((ret = RegEnumKeyEx(hKey, dwIndex, szSubKeyName, &cbName, NULL, NULL, NULL, NULL)) != ERROR_NO_MORE_ITEMS)
+			{
+				// открываем вложенный раздел и ищем в нем ключ DisplayName
+				HKEY hItem;
+				if ((RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ | KEY_WOW64_64KEY, &hItem) != ERROR_SUCCESS))
+					continue;
+				// отображаем на экране название установленной программы
+				dwSize = sizeof(szDisplayName);
+				DWORD dwValue = 0;
+				DWORD dwSizeValue = sizeof(dwValue);
+				if (
+					RegQueryValueEx(hItem, L"ReleaseType", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
+					RegQueryValueEx(hItem, L"ParentDisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
+					RegQueryValueEx(hItem, L"SystemComponent", NULL, NULL, (LPBYTE)&dwValue, &dwSizeValue) and
+					RegQueryValueEx(hItem, L"DisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS) {
+
+					SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
+
+				}
+				RegCloseKey(hItem);
+				dwIndex++;
+				cbName = 256;
+			}
+			RegCloseKey(hKey);
+	
+
+	}
+
+
+void MainWndStart0(HWND hWnd) {
+	MainWndStart1(hWnd);
+	MainWndStart2(hWnd);
+	MainWndStart3(hWnd);
+}
+
+
+void MainWndStart1(HWND hWnd) {
+
+	SendMessage(hListBox, LB_RESETCONTENT, 0, 0);
+
+	DWORD dwIndex = 0;
+
 	LONG ret;
 	DWORD cbName = 256;
 	TCHAR szSubKeyName[256];
@@ -147,26 +202,116 @@ void MainWndStart(HWND hWnd) {
 	DWORD dwType;
 	HKEY hKey;
 
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", 0, KEY_READ | KEY_WOW64_64KEY, &hKey) != ERROR_SUCCESS)
+
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall", 0, KEY_READ | KEY_WOW64_64KEY, &hKey) != ERROR_SUCCESS)
 		return;
 	// Поочередно проходим по каждому вложенному разделу
 	while ((ret = RegEnumKeyEx(hKey, dwIndex, szSubKeyName, &cbName, NULL, NULL, NULL, NULL)) != ERROR_NO_MORE_ITEMS)
 	{
-			// открываем вложенный раздел и ищем в нем ключ DisplayName
-			HKEY hItem;
-			if (RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ | KEY_WOW64_64KEY, &hItem) != ERROR_SUCCESS)
-				continue;
-			// отображаем на экране название установленной программы
-			dwSize = sizeof(szDisplayName);
-			if (RegQueryValueEx(hItem, L"DisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS)
-				SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
-			RegCloseKey(hItem);
-			dwIndex++;
-			cbName = 256;
+		// открываем вложенный раздел и ищем в нем ключ DisplayName
+		HKEY hItem;
+		if ((RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ | KEY_WOW64_64KEY, &hItem) != ERROR_SUCCESS))
+			continue;
+		// отображаем на экране название установленной программы
+		dwSize = sizeof(szDisplayName);
+		DWORD dwValue = 0;
+		DWORD dwSizeValue = sizeof(dwValue);
+		if (
+			RegQueryValueEx(hItem, L"ReleaseType", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
+			RegQueryValueEx(hItem, L"ParentDisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
+			RegQueryValueEx(hItem, L"SystemComponent", NULL, NULL, (LPBYTE)&dwValue, &dwSizeValue) and
+			RegQueryValueEx(hItem, L"DisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS) {
+
+			SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
+
+		}
+		RegCloseKey(hItem);
+		dwIndex++;
+		cbName = 256;
 	}
 	RegCloseKey(hKey);
 }
 
+void MainWndStart2(HWND hWnd) {
+
+	DWORD dwIndex = 0;
+
+	LONG ret;
+	DWORD cbName = 256;
+	TCHAR szSubKeyName[256];
+	char szDisplayName[256];
+	DWORD dwSize;
+	DWORD dwType;
+	HKEY hKey;
+
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall", 0, KEY_READ | KEY_WOW64_64KEY, &hKey) != ERROR_SUCCESS)
+		return;
+	// Поочередно проходим по каждому вложенному разделу
+	while ((ret = RegEnumKeyEx(hKey, dwIndex, szSubKeyName, &cbName, NULL, NULL, NULL, NULL)) != ERROR_NO_MORE_ITEMS)
+	{
+		// открываем вложенный раздел и ищем в нем ключ DisplayName
+		HKEY hItem;
+		if ((RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ | KEY_WOW64_64KEY, &hItem) != ERROR_SUCCESS))
+			continue;
+		// отображаем на экране название установленной программы
+		dwSize = sizeof(szDisplayName);
+		DWORD dwValue = 0;
+		DWORD dwSizeValue = sizeof(dwValue);
+		if (
+			RegQueryValueEx(hItem, L"ReleaseType", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
+			RegQueryValueEx(hItem, L"ParentDisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
+			RegQueryValueEx(hItem, L"SystemComponent", NULL, NULL, (LPBYTE)&dwValue, &dwSizeValue) and
+			RegQueryValueEx(hItem, L"DisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS) {
+
+			SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
+
+		}
+		RegCloseKey(hItem);
+		dwIndex++;
+		cbName = 256;
+	}
+	RegCloseKey(hKey);
+}
+
+void MainWndStart3(HWND hWnd){
+
+	DWORD dwIndex = 0;
+
+	LONG ret;
+	DWORD cbName = 256;
+	TCHAR szSubKeyName[256];
+	char szDisplayName[256];
+	DWORD dwSize;
+	DWORD dwType;
+	HKEY hKey;
+
+	if (RegOpenKeyEx(HKEY_CLASSES_ROOT, L"installer\\Products", 0, KEY_READ | KEY_WOW64_64KEY, &hKey) != ERROR_SUCCESS)
+		return;
+	// Поочередно проходим по каждому вложенному разделу
+	while ((ret = RegEnumKeyEx(hKey, dwIndex, szSubKeyName, &cbName, NULL, NULL, NULL, NULL)) != ERROR_NO_MORE_ITEMS)
+	{
+		// открываем вложенный раздел и ищем в нем ключ DisplayName
+		HKEY hItem;
+		if ((RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ | KEY_WOW64_64KEY, &hItem) != ERROR_SUCCESS))
+			continue;
+		// отображаем на экране название установленной программы
+		dwSize = sizeof(szDisplayName);
+		DWORD dwValue = 0;
+		DWORD dwSizeValue = sizeof(dwValue);
+		if (
+			RegQueryValueEx(hItem, L"ReleaseType", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
+			RegQueryValueEx(hItem, L"ParentDisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
+			RegQueryValueEx(hItem, L"SystemComponent", NULL, NULL, (LPBYTE)&dwValue, &dwSizeValue) and
+			RegQueryValueEx(hItem, L"ProductName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS) {
+
+			SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
+
+		}
+		RegCloseKey(hItem);
+		dwIndex++;
+		cbName = 256;
+	}
+	RegCloseKey(hKey);
 
 
-
+}
