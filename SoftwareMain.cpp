@@ -4,6 +4,11 @@
 #include "resource.h"
 #include "SoftwareDefinitions.h"
 
+
+
+
+
+
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdshow) {
 	WNDCLASS SoftwareMainClass = NewWindowClass((HBRUSH)COLOR_WINDOW, LoadCursor(NULL, IDC_ARROW), hInst, LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON1)),
 	L"MainWndClass", SoftwareMainProcedure);
@@ -40,21 +45,24 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 	case WM_CREATE:
 		MainWndAddMenues(hWnd);
 		MainWndAddWidgets(hWnd);
-		MainWndStart0(hWnd);
+		MainWndStart(hWnd, NULL, ProgramName);
 		break;
 	case WM_COMMAND:
 		switch (wp) {
 		case OnReloadSoftware:
-			MainWndStart0(hWnd);
+			MainWndStart(hWnd, NULL, ProgramName);
 			break;
 		case OnSaveFile:
-			SaveDate("C:\\Users\\yaros\\source\\repos\\Project1\\output.txt");
+			SaveDate("output.txt");
 			break;
 		case OnExitSoftware:
 			PostQuitMessage(0);
 			break;
 		case OnAboutIt:
-
+			AboutIt(hWnd);
+			break;
+		case OnDelete:
+			DeleteApp(hWnd);
 			break;
 		default: break;
 		}
@@ -91,11 +99,11 @@ void MainWndAddMenues(HWND hWnd) {
 
 // - - - - - - - - - - В И Д Ж Е Т Ы - - - - - - - - - - //
 void MainWndAddWidgets(HWND hWnd) {
-	hListBox = CreateWindowA("LISTBOX", NULL, WS_CHILD | WS_VSCROLL | WS_BORDER | WS_VISIBLE | LBS_SORT | LB_ADDSTRING, 30, 30, 820, 350, hWnd, NULL, NULL, NULL);
+	hListBox = CreateWindowA("LISTBOX", NULL, WS_CHILD  | WS_VISIBLE  | LB_ADDSTRING | LBS_STANDARD, 30, 30, 820, 350, hWnd, NULL, NULL, NULL);
 
 	CreateWindowA("button", "Save", WS_VISIBLE | WS_CHILD | ES_CENTER, 30, 425, 150, 30, hWnd, (HMENU)OnSaveFile, NULL, NULL);
-	CreateWindowA("button", "Delete", WS_VISIBLE | WS_CHILD | ES_CENTER, 250, 425, 150, 30, hWnd, (HMENU)DeleteApp, NULL, NULL);
-	CreateWindowA("button", "new", WS_VISIBLE | WS_CHILD | ES_CENTER, 470, 425, 150, 30, hWnd, NULL, NULL, NULL);
+	CreateWindowA("button", "Delete", WS_VISIBLE | WS_CHILD | ES_CENTER, 250, 425, 150, 30, hWnd, (HMENU)OnDelete, NULL, NULL);
+	CreateWindowA("button", "Reload", WS_VISIBLE | WS_CHILD | ES_CENTER, 470, 425, 150, 30, hWnd, (HMENU)OnReloadSoftware, NULL, NULL);
 	CreateWindowA("button", "Exit", WS_VISIBLE | WS_CHILD | ES_CENTER, 700, 425, 150, 30, hWnd, (HMENU)OnExitSoftware, NULL, NULL);
 
 }
@@ -103,6 +111,8 @@ void MainWndAddWidgets(HWND hWnd) {
 
 // - - - - - - - - - - С О Х Р А Н Е Н И Е - В - Ф А Й Л - - - - - - - - - - //
 void SaveDate(LPCSTR path) {
+
+
 	HANDLE FileToSave = CreateFileA(
 		path,
 		GENERIC_WRITE,
@@ -111,128 +121,133 @@ void SaveDate(LPCSTR path) {
 		CREATE_ALWAYS,
 		FILE_ATTRIBUTE_NORMAL,
 		NULL);
+	
+	int i = 0;
+	int count = SendMessageA(hListBox, LB_GETCOUNT, NULL, NULL);
+	
 
-	int saveLenth = GetWindowTextLength(hListBox) + 1;
-	char* data = new char[saveLenth];
+	while (i < count) 
+	{
+		int size = SendMessageA(hListBox, LB_GETTEXT, (WPARAM)i, NULL)+1;
+		wchar_t* data = new wchar_t[size];
+		int dbg = SendMessageA(hListBox, LB_GETTEXT, i, (LPARAM)data);
 
-	saveLenth = GetWindowTextA(hListBox, data, saveLenth);
+		WriteFile(FileToSave, data, dbg, NULL, NULL);
+		WriteFile(FileToSave, "\n", 1, NULL, NULL);
+		i++;
+		delete[] data;
+	}
 
-	DWORD bytesIterated;
-	WriteFile(FileToSave, data, saveLenth, &bytesIterated, NULL);
+
+
 
 	CloseHandle(FileToSave);
-	delete[] data;
+	
 }
 
 
 // - - - - - - - - - - У Д А Л Е Н И Е - - - - - - - - - - //
-void DeleteApp() {
+void DeleteApp(HWND hWnd) {
 
-	//----------------------------------------------
-
+	int uSelectedItem;
+	
+	
+	// Определяем номер выделенной строки
+	uSelectedItem = (int)SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+	// Если в списке есть выделенная строка,
+		
+	if (uSelectedItem != LB_ERR)
+	{
+		// Получаем выделенную строку
+		SendMessageA(hListBox, LB_GETTEXT, uSelectedItem, (LPARAM)ProgramName);
+		uninstall = true;
+		
+	}
+	MainWndStart(hWnd, uninstall, ProgramName);
 }
 
 
 // - - - - - - - - - - С Ч И Т Ы В А Н И Е - Р Е Е С Т Р А - - - - - - - - - - //
-void MainWndStart(HWND hWnd) {
 
+
+
+void MainWndStart(HWND hWnd, bool uninstall, char ProgramName[]) {
 	SendMessage(hListBox, LB_RESETCONTENT, 0, 0);
-
-	DWORD dwIndex = 0;
-
-	LONG ret;
-	DWORD cbName = 256;
-	TCHAR szSubKeyName[256];
-	char szDisplayName[256];
-	DWORD dwSize;
-	DWORD dwType;
-	HKEY hKey;
 	
-	
-			if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall", 0, KEY_READ | KEY_WOW64_64KEY, &hKey) != ERROR_SUCCESS)
-				return;
-			// Поочередно проходим по каждому вложенному разделу
-			while ((ret = RegEnumKeyEx(hKey, dwIndex, szSubKeyName, &cbName, NULL, NULL, NULL, NULL)) != ERROR_NO_MORE_ITEMS)
-			{
-				// открываем вложенный раздел и ищем в нем ключ DisplayName
-				HKEY hItem;
-				if ((RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ | KEY_WOW64_64KEY, &hItem) != ERROR_SUCCESS))
-					continue;
-				// отображаем на экране название установленной программы
-				dwSize = sizeof(szDisplayName);
-				DWORD dwValue = 0;
-				DWORD dwSizeValue = sizeof(dwValue);
-				if (
-					RegQueryValueEx(hItem, L"ReleaseType", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
-					RegQueryValueEx(hItem, L"ParentDisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
-					RegQueryValueEx(hItem, L"SystemComponent", NULL, NULL, (LPBYTE)&dwValue, &dwSizeValue) and
-					RegQueryValueEx(hItem, L"DisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS) {
-
-					SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
-
-				}
-				RegCloseKey(hItem);
-				dwIndex++;
-				cbName = 256;
-			}
-			RegCloseKey(hKey);
-	
-
-	}
-
-
-void MainWndStart0(HWND hWnd) {
-	MainWndStart1(hWnd);
-	MainWndStart2(hWnd);
-	MainWndStart3(hWnd);
+	MainWndStart1(hWnd, uninstall, ProgramName);
+	MainWndStart2(hWnd, uninstall, ProgramName);
+	MainWndStart3(hWnd, uninstall, ProgramName);
 }
 
 
-void MainWndStart1(HWND hWnd) {
-
-	SendMessage(hListBox, LB_RESETCONTENT, 0, 0);
-
+void MainWndStart1(HWND hWnd, bool uninstall, char ProgramName[]) {
+	
 	DWORD dwIndex = 0;
 
 	LONG ret;
 	DWORD cbName = 256;
 	TCHAR szSubKeyName[256];
 	char szDisplayName[256];
+	char szReleaseType[256];
+	char szParentDisplayName[256];
+	char delName[256];
+	DWORD delSize;
+	DWORD pdnSize;
+	DWORD rtSize;
 	DWORD dwSize;
 	DWORD dwType;
 	HKEY hKey;
-
 
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall", 0, KEY_READ | KEY_WOW64_64KEY, &hKey) != ERROR_SUCCESS)
 		return;
 	// Поочередно проходим по каждому вложенному разделу
 	while ((ret = RegEnumKeyEx(hKey, dwIndex, szSubKeyName, &cbName, NULL, NULL, NULL, NULL)) != ERROR_NO_MORE_ITEMS)
 	{
-		// открываем вложенный раздел и ищем в нем ключ DisplayName
+		// открываем вложенный раздел и ищем в нем ключи
 		HKEY hItem;
 		if ((RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ | KEY_WOW64_64KEY, &hItem) != ERROR_SUCCESS))
 			continue;
 		// отображаем на экране название установленной программы
 		dwSize = sizeof(szDisplayName);
+		rtSize = sizeof(szReleaseType);
+		pdnSize = sizeof(szParentDisplayName);
+		delSize = sizeof(delName);
 		DWORD dwValue = 0;
 		DWORD dwSizeValue = sizeof(dwValue);
 		if (
-			RegQueryValueEx(hItem, L"ReleaseType", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
-			RegQueryValueEx(hItem, L"ParentDisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
-			RegQueryValueEx(hItem, L"SystemComponent", NULL, NULL, (LPBYTE)&dwValue, &dwSizeValue) and
-			RegQueryValueEx(hItem, L"DisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS) {
+			
+			RegQueryValueExA(hItem, "ReleaseType", NULL, &dwType, (LPBYTE)&szReleaseType, &rtSize) == ERROR_FILE_NOT_FOUND and
+			RegQueryValueExA(hItem, "ParentDisplayName", NULL, &dwType, (LPBYTE)&szParentDisplayName, &pdnSize) == ERROR_FILE_NOT_FOUND and
+			RegQueryValueExA(hItem, "SystemComponent", NULL, NULL, (LPBYTE)&dwValue, &dwSizeValue) and
+			RegQueryValueExA(hItem, "UninstallString", NULL, &dwType, (LPBYTE)&delName, &delSize) == ERROR_SUCCESS and
+			RegQueryValueExA(hItem, "DisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS) 
+		{
+			
+			std::string NameReestr = std::string(szDisplayName);
+			std::string NameListbox = std::string(ProgramName);
 
-			SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
+			std::string UninstallString = std::string(delName);
+
+			SendMessageA(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
+			if (uninstall and (NameReestr == NameListbox))
+			{
+				uninstall = false;
+				system(delName);
+			
+			}
+			
 
 		}
 		RegCloseKey(hItem);
 		dwIndex++;
 		cbName = 256;
 	}
+	
 	RegCloseKey(hKey);
+		
 }
 
-void MainWndStart2(HWND hWnd) {
+void MainWndStart2(HWND hWnd, bool uninstall, char ProgramName[]) {
 
 	DWORD dwIndex = 0;
 
@@ -240,6 +255,12 @@ void MainWndStart2(HWND hWnd) {
 	DWORD cbName = 256;
 	TCHAR szSubKeyName[256];
 	char szDisplayName[256];
+	char szReleaseType[256];
+	char szParentDisplayName[256];
+	char delName[256];
+	DWORD delSize;
+	DWORD pdnSize;
+	DWORD rtSize;
 	DWORD dwSize;
 	DWORD dwType;
 	HKEY hKey;
@@ -249,21 +270,39 @@ void MainWndStart2(HWND hWnd) {
 	// Поочередно проходим по каждому вложенному разделу
 	while ((ret = RegEnumKeyEx(hKey, dwIndex, szSubKeyName, &cbName, NULL, NULL, NULL, NULL)) != ERROR_NO_MORE_ITEMS)
 	{
-		// открываем вложенный раздел и ищем в нем ключ DisplayName
+		// открываем вложенный раздел и ищем в нем ключи
 		HKEY hItem;
 		if ((RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ | KEY_WOW64_64KEY, &hItem) != ERROR_SUCCESS))
 			continue;
 		// отображаем на экране название установленной программы
 		dwSize = sizeof(szDisplayName);
+		rtSize = sizeof(szReleaseType);
+		pdnSize = sizeof(szParentDisplayName);
+		delSize = sizeof(delName);
 		DWORD dwValue = 0;
 		DWORD dwSizeValue = sizeof(dwValue);
 		if (
-			RegQueryValueEx(hItem, L"ReleaseType", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
-			RegQueryValueEx(hItem, L"ParentDisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
-			RegQueryValueEx(hItem, L"SystemComponent", NULL, NULL, (LPBYTE)&dwValue, &dwSizeValue) and
-			RegQueryValueEx(hItem, L"DisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS) {
 
-			SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
+			RegQueryValueExA(hItem, "ReleaseType", NULL, &dwType, (LPBYTE)&szReleaseType, &rtSize) == ERROR_FILE_NOT_FOUND and
+			RegQueryValueExA(hItem, "ParentDisplayName", NULL, &dwType, (LPBYTE)&szParentDisplayName, &pdnSize) == ERROR_FILE_NOT_FOUND and
+			RegQueryValueExA(hItem, "SystemComponent", NULL, NULL, (LPBYTE)&dwValue, &dwSizeValue) and
+			RegQueryValueExA(hItem, "UninstallString", NULL, &dwType, (LPBYTE)&delName, &pdnSize) == ERROR_SUCCESS and
+			RegQueryValueExA(hItem, "DisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS)
+		{	
+			std::string NameReestr = std::string(szDisplayName);
+			std::string NameListbox = std::string(ProgramName);
+
+			std::string UninstallString = std::string(delName);
+
+			SendMessageA(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
+			if (uninstall and (NameReestr == NameListbox))
+			{
+				uninstall = false;
+				system(delName);
+
+			}
+			
+			
 
 		}
 		RegCloseKey(hItem);
@@ -273,7 +312,7 @@ void MainWndStart2(HWND hWnd) {
 	RegCloseKey(hKey);
 }
 
-void MainWndStart3(HWND hWnd){
+void MainWndStart3(HWND hWnd, bool uninstall, char ProgramName[]){
 
 	DWORD dwIndex = 0;
 
@@ -281,6 +320,12 @@ void MainWndStart3(HWND hWnd){
 	DWORD cbName = 256;
 	TCHAR szSubKeyName[256];
 	char szDisplayName[256];
+	char szReleaseType[256];
+	char szParentDisplayName[256];
+	char delName[256];
+	DWORD delSize;
+	DWORD pdnSize;
+	DWORD rtSize;
 	DWORD dwSize;
 	DWORD dwType;
 	HKEY hKey;
@@ -290,21 +335,37 @@ void MainWndStart3(HWND hWnd){
 	// Поочередно проходим по каждому вложенному разделу
 	while ((ret = RegEnumKeyEx(hKey, dwIndex, szSubKeyName, &cbName, NULL, NULL, NULL, NULL)) != ERROR_NO_MORE_ITEMS)
 	{
-		// открываем вложенный раздел и ищем в нем ключ DisplayName
+		// открываем вложенный раздел и ищем в нем ключи
 		HKEY hItem;
 		if ((RegOpenKeyEx(hKey, szSubKeyName, 0, KEY_READ | KEY_WOW64_64KEY, &hItem) != ERROR_SUCCESS))
 			continue;
 		// отображаем на экране название установленной программы
 		dwSize = sizeof(szDisplayName);
+		rtSize = sizeof(szReleaseType);
+		pdnSize = sizeof(szParentDisplayName);
+		delSize = sizeof(delName);
 		DWORD dwValue = 0;
 		DWORD dwSizeValue = sizeof(dwValue);
 		if (
-			RegQueryValueEx(hItem, L"ReleaseType", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
-			RegQueryValueEx(hItem, L"ParentDisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_FILE_NOT_FOUND and
-			RegQueryValueEx(hItem, L"SystemComponent", NULL, NULL, (LPBYTE)&dwValue, &dwSizeValue) and
-			RegQueryValueEx(hItem, L"ProductName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS) {
 
-			SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
+			RegQueryValueExA(hItem, "ReleaseType", NULL, &dwType, (LPBYTE)&szReleaseType, &rtSize) == ERROR_FILE_NOT_FOUND and
+			RegQueryValueExA(hItem, "ParentDisplayName", NULL, &dwType, (LPBYTE)&szParentDisplayName, &pdnSize) == ERROR_FILE_NOT_FOUND and
+			RegQueryValueExA(hItem, "SystemComponent", NULL, NULL, (LPBYTE)&dwValue, &dwSizeValue) and
+			RegQueryValueExA(hItem, "UninstallString", NULL, &dwType, (LPBYTE)&delName, &delSize) == ERROR_SUCCESS and
+			RegQueryValueExA(hItem, "DisplayName", NULL, &dwType, (LPBYTE)&szDisplayName, &dwSize) == ERROR_SUCCESS)
+		{
+			std::string NameReestr = std::string(szDisplayName);
+			std::string NameListbox = std::string(ProgramName);
+
+			std::string UninstallString = std::string(delName);
+
+			SendMessageA(hListBox, LB_ADDSTRING, 0, (LPARAM)(LPSTR)szDisplayName);
+			if (uninstall and (NameReestr == NameListbox))
+			{
+				uninstall = false;
+				system(delName);
+
+			}
 
 		}
 		RegCloseKey(hItem);
@@ -314,4 +375,11 @@ void MainWndStart3(HWND hWnd){
 	RegCloseKey(hKey);
 
 
+}
+
+
+
+void AboutIt(HWND hWnd) 
+{
+	MessageBoxA(hWnd, "application destroyer - приложение для управления \nустановленными прграммами.\n\nИнформация по кнопкам: \nSave - Сохранить список программ в текстовый файл(output.txt в корневой папке); \nDelete - удалить программу; \nReload - обновить список в реальном времени; \nExit - выйти из приложения. \n\n\nРазработал студент КФ МГТУ им. Н.Э. Баумана \nгр. ИУК5-41Б \nСтародуб Ярослав", "About It", MB_OK | MB_ICONINFORMATION);
 }
